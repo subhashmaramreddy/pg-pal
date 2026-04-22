@@ -15,3 +15,13 @@ console.log("Environment loaded:", {
 
 // Now import and run the app
 import('./index.js').catch(console.error);
+app.get('/', (req, res) => {
+  res.send('PG-Pal Backend is Live 🚀');
+});
+
+app.get('/api', (req, res) => {
+  res.json({
+    success: true,
+    message: 'API is working 🚀'
+  });
+});
