@@ -1,0 +1,101 @@
+import { Router, Response } from 'express';
+import { AuthRequest } from '../types/express.js';
+import { generateToken, verifyToken } from '../utils/jwt.js';
+import { getAdminByEmail, verifyAdminPassword, createAdmin } from '../services/database.js';
+
+const router = Router();
+
+// Admin Login
+router.post('/admin/login', async (req: AuthRequest, res: Response) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: 'Email and password required' });
+    }
+
+    const isValid = await verifyAdminPassword(email, password);
+    if (!isValid) {
+      return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+
+    const admin = await getAdminByEmail(email);
+    if (!admin) {
+      return res.status(404).json({ success: false, error: 'Admin not found' });
+    }
+
+    const token = generateToken(admin.id, admin.email, 'admin', admin.pg_type);
+
+    res.json({
+      success: true,
+      data: {
+        token,
+        pgType: admin.pg_type,
+        admin: { id: admin.id, email: admin.email, pgType: admin.pg_type }
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: (error as Error).message });
+  }
+});
+
+// Admin Register (for first-time setup)
+router.post('/admin/register', async (req: AuthRequest, res: Response) => {
+  try {
+    const { email, password, pgType } = req.body;
+
+    if (!email || !password || !pgType) {
+      return res.status(400).json({ success: false, error: 'Email, password, and pgType required' });
+    }
+
+    // Check if admin already exists
+    const existing = await getAdminByEmail(email);
+    if (existing) {
+      return res.status(409).json({ success: false, error: 'Admin already exists' });
+    }
+
+    const result = await createAdmin(email, password, pgType);
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    const admin = await getAdminByEmail(email);
+    if (!admin) {
+      return res.status(404).json({ success: false, error: 'Failed to create admin' });
+    }
+
+    const token = generateToken(admin.id, admin.email, 'admin', admin.pgType);
+
+    res.status(201).json({
+      success: true,
+      data: {
+        token,
+        admin: { id: admin.id, email: admin.email, pgType: admin.pgType }
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: (error as Error).message });
+  }
+});
+
+// Verify Token
+router.post('/verify-token', (req: AuthRequest, res: Response) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ success: false, error: 'Token required' });
+    }
+
+    const decoded = verifyToken(token);
+    if (!decoded) {
+      return res.status(401).json({ success: false, error: 'Invalid or expired token' });
+    }
+
+    res.json({ success: true, data: decoded });
+  } catch (error) {
+    res.status(500).json({ success: false, error: (error as Error).message });
+  }
+});
+
+export default router;

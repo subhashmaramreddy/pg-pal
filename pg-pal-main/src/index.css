@@ -1,0 +1,117 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* PG Management System - Design System
+   Primary: Deep Navy (#1e3a5f) - trustworthy, professional
+   Accent: Warm Amber (#f59e0b) - inviting, action-oriented
+*/
+
+@layer base {
+  :root {
+    --background: 210 20% 98%;
+    --foreground: 210 50% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 50% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 50% 10%;
+
+    --primary: 210 52% 24%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 20% 96%;
+    --secondary-foreground: 210 52% 24%;
+
+    --muted: 210 20% 96%;
+    --muted-foreground: 210 20% 45%;
+
+    --accent: 38 92% 50%;
+    --accent-foreground: 210 50% 10%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 20% 90%;
+    --input: 210 20% 90%;
+    --ring: 210 52% 24%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 210 52% 24%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 38 92% 50%;
+    --sidebar-primary-foreground: 210 50% 10%;
+    --sidebar-accent: 210 52% 30%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 210 52% 30%;
+    --sidebar-ring: 38 92% 50%;
+
+    /* Custom tokens */
+    --navy: 210 52% 24%;
+    --navy-light: 210 52% 35%;
+    --navy-dark: 210 52% 18%;
+    --amber: 38 92% 50%;
+    --amber-light: 38 92% 60%;
+    --amber-dark: 38 92% 40%;
+    --success: 142 76% 36%;
+    --warning: 38 92% 50%;
+    --info: 210 92% 50%;
+  }
+
+  .dark {
+    --background: 210 50% 8%;
+    --foreground: 210 20% 98%;
+
+    --card: 210 50% 12%;
+    --card-foreground: 210 20% 98%;
+
+    --popover: 210 50% 12%;
+    --popover-foreground: 210 20% 98%;
+
+    --primary: 38 92% 50%;
+    --primary-foreground: 210 50% 10%;
+
+    --secondary: 210 50% 18%;
+    --secondary-foreground: 210 20% 98%;
+
+    --muted: 210 50% 18%;
+    --muted-foreground: 210 20% 65%;
+
+    --accent: 210 52% 35%;
+    --accent-foreground: 210 20% 98%;
+
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 210 20% 98%;
+
+    --border: 210 50% 18%;
+    --input: 210 50% 18%;
+    --ring: 38 92% 50%;
+
+    --sidebar-background: 210 50% 10%;
+    --sidebar-foreground: 210 20% 98%;
+    --sidebar-primary: 38 92% 50%;
+    --sidebar-primary-foreground: 210 50% 10%;
+    --sidebar-accent: 210 50% 18%;
+    --sidebar-accent-foreground: 210 20% 98%;
+    --sidebar-border: 210 50% 18%;
+    --sidebar-ring: 38 92% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
+  }
+}
