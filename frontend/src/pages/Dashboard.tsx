@@ -123,4 +123,25 @@ export default function Dashboard() {
         <Footer />
       </div>
     );
-  } 
+  }
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+
+      <main className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Dashboard Loaded ✅</h1>
+          <p className="text-muted-foreground mt-2">
+            Welcome {tenant?.name}
+          </p>
+
+          <Button className="mt-4" onClick={handleLogout}>
+            Logout
+          </Button>
+        </div>
+      </main>
+
+      <Footer />
+    </div>
+  );
+}
