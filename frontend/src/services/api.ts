@@ -1,8 +1,8 @@
 import axios, { AxiosInstance } from 'axios';
 import { io, Socket } from 'socket.io-client';
 
-const BASE_URL = "https://pg-pal-backend-new3.onrender.com/api";
-const WS_URL = "https://pg-pal-backend-new3.onrender.com";
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:5000';
 
 // API Response Types
 export interface ApiResponse<T> {
