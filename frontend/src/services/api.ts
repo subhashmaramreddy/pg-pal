@@ -313,10 +313,10 @@ class ApiClient {
     const response = await this.client.get<ApiResponse<Payment[]>>(`/tenant/payments/${tenantId}`);
     return response.data.data ?? [];
   }
-    return response.data.data ?? [];
+  
   }
 
-  async getPaymentsByTenant(tenantId: string): Promise < Payment[] > {
+ {
   const response = await this.client.get<ApiResponse<Payment[]>>(`/tenant/payments/${tenantId}`);
   return response.data.data ?? [];
 }
