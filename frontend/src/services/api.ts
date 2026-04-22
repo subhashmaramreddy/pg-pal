@@ -1,8 +1,8 @@
 import axios, { AxiosInstance } from 'axios';
 import { io, Socket } from 'socket.io-client';
 
-const API_BASE_URL = 'http://localhost:5000/api';
-const WS_URL = 'http://localhost:5000';
+const BASE_URL = "https://pg-pal-backend-new3.onrender.com/api";
+const WS_URL = "https://pg-pal-backend-new3.onrender.com";
 
 // API Response Types
 export interface ApiResponse<T> {
@@ -136,7 +136,7 @@ class ApiClient {
       email,
       password,
     });
-    
+
     if (response.data.data) {
       const admin = response.data.data;
       this.token = admin.token;
@@ -145,7 +145,7 @@ class ApiClient {
       localStorage.setItem('pg_type', admin.pgType);
       localStorage.setItem('admin_email', admin.email);
     }
-    
+
     return response.data.data!;
   }
 
@@ -163,7 +163,7 @@ class ApiClient {
       email,
       password,
     });
-    
+
     if (response.data.data) {
       const tenant = response.data.data;
       this.token = tenant.token;
@@ -174,7 +174,7 @@ class ApiClient {
       localStorage.setItem('tenant_name', tenant.name);
       localStorage.setItem('tenant_room_id', tenant.roomId);
     }
-    
+
     return response.data.data!;
   }
 
@@ -316,89 +316,89 @@ class ApiClient {
     return response.data.data ?? [];
   }
 
-  async getPaymentsByTenant(tenantId: string): Promise<Payment[]> {
-    const response = await this.client.get<ApiResponse<Payment[]>>(`/tenant/payments/${tenantId}`);
-    return response.data.data ?? [];
-  }
+  async getPaymentsByTenant(tenantId: string): Promise < Payment[] > {
+  const response = await this.client.get<ApiResponse<Payment[]>>(`/tenant/payments/${tenantId}`);
+  return response.data.data ?? [];
+}
 
-  async createPayment(tenantId: string, month: string, amount: number): Promise<Payment> {
-    const response = await this.client.post<ApiResponse<Payment>>('/admin/payments', {
-      tenant_id: tenantId,
-      month,
-      amount,
-    });
-    return response.data.data!;
-  }
+  async createPayment(tenantId: string, month: string, amount: number): Promise < Payment > {
+  const response = await this.client.post<ApiResponse<Payment>>('/admin/payments', {
+    tenant_id: tenantId,
+    month,
+    amount,
+  });
+  return response.data.data!;
+}
 
-  async markPaymentDone(paymentId: string): Promise<Payment> {
-    const response = await this.client.patch<ApiResponse<Payment>>(`/admin/payments/${paymentId}/mark-paid`, {
-      status: 'paid',
-    });
-    return response.data.data!;
-  }
+  async markPaymentDone(paymentId: string): Promise < Payment > {
+  const response = await this.client.patch<ApiResponse<Payment>>(`/admin/payments/${paymentId}/mark-paid`, {
+    status: 'paid',
+  });
+  return response.data.data!;
+}
 
-  // ===== WEBSOCKET =====
-  connectSocket(token: string, pgType: 'boys' | 'girls'): Promise<void> {
-    return new Promise((resolve, reject) => {
-      try {
-        this.socket = io(WS_URL, {
-          auth: { token },
-          reconnection: true,
-          reconnectionDelay: 1000,
-          reconnectionDelayMax: 5000,
-          reconnectionAttempts: 5,
-        });
+// ===== WEBSOCKET =====
+connectSocket(token: string, pgType: 'boys' | 'girls'): Promise < void> {
+  return new Promise((resolve, reject) => {
+    try {
+      this.socket = io(WS_URL, {
+        auth: { token },
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        reconnectionAttempts: 5,
+      });
 
-        this.socket.on('connect', () => {
-          console.log('✓ WebSocket connected');
-          this.socket?.emit('join-room', { pgType, role: 'admin' });
-          resolve();
-        });
+      this.socket.on('connect', () => {
+        console.log('✓ WebSocket connected');
+        this.socket?.emit('join-room', { pgType, role: 'admin' });
+        resolve();
+      });
 
-        this.socket.on('connect_error', (error) => {
-          console.error('✗ WebSocket connection error:', error);
-          reject(error);
-        });
-
-        this.socket.on('disconnect', () => {
-          console.log('✗ WebSocket disconnected');
-        });
-      } catch (error) {
+      this.socket.on('connect_error', (error) => {
+        console.error('✗ WebSocket connection error:', error);
         reject(error);
-      }
-    });
-  }
+      });
 
-  disconnectSocket(): void {
-    if (this.socket) {
-      this.socket.disconnect();
-      this.socket = null;
+      this.socket.on('disconnect', () => {
+        console.log('✗ WebSocket disconnected');
+      });
+    } catch (error) {
+      reject(error);
     }
+  });
+}
+
+disconnectSocket(): void {
+  if(this.socket) {
+  this.socket.disconnect();
+  this.socket = null;
+}
   }
 
-  onSocketEvent(event: string, callback: (data: any) => void): void {
-    if (this.socket) {
-      this.socket.on(event, callback);
-    }
+onSocketEvent(event: string, callback: (data: any) => void): void {
+  if(this.socket) {
+  this.socket.on(event, callback);
+}
   }
 
-  offSocketEvent(event: string, callback?: (data: any) => void): void {
-    if (this.socket) {
-      if (callback) {
-        this.socket.off(event, callback);
-      } else {
-        this.socket.off(event);
-      }
-    }
+offSocketEvent(event: string, callback ?: (data: any) => void): void {
+  if(this.socket) {
+  if (callback) {
+    this.socket.off(event, callback);
+  } else {
+    this.socket.off(event);
+  }
+}
   }
 
-  isConnected(): boolean {
-    return this.socket?.connected ?? false;
-  }
+isConnected(): boolean {
+  return this.socket?.connected ?? false;
+}
 
-  getSocket(): Socket | null {
-    return this.socket;
-  }
+getSocket(): Socket | null {
+  return this.socket;
+}
 }
 
 // Singleton instance
