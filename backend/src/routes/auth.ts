@@ -115,35 +115,30 @@ router.post('/admin/register', async (req: AuthRequest, res: Response) => {
 });
 
 // Verify Token
-router.post('/verify-token', (req: AuthRequest, res: Response) => {
+router.post('/verify-token', (req, res) => {
   try {
     const authHeader = req.headers.authorization;
 
     if (!authHeader) {
-      return res.status(400).json({ success: false, error: "No token provided" });
+      return res.status(400).json({ success: false });
     }
 
     const token = authHeader.split(" ")[1];
 
     if (!token) {
-      return res.status(400).json({ success: false, error: "Invalid token format" });
+      return res.status(400).json({ success: false });
     }
 
-    const decoded = verifyToken(token);
-
-    if (!decoded) {
-      return res.status(400).json({ success: false, error: "Invalid or expired token" });
-    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     return res.json({
       success: true,
       user: decoded
     });
 
-  } catch (error) {
-    return res.status(400).json({
-      success: false,
-      error: "Invalid or expired token"
+  } catch (err) {
+    return res.status(401).json({
+      success: false
     });
   }
 });
