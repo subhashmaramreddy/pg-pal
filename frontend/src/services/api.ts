@@ -184,10 +184,15 @@ class ApiClient {
       
    
   async verifyToken(): Promise<boolean> {
-    console.log("TOKEN USED:", localStorage.getItem("admin_token"));
-    const res = await this.client.post('/auth/verify-token');
+    const token = localStorage.getItem("admin_token");
+    console.log("TOKEN USED:", token);
+    const res = await this.client.post('/auth/verify-token', {}, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     console.log("VERIFY RESPONSE:", res.data);
-    return res.data.success;
+    return res.data.success === true;
   }
 
   async tenantLogin(email: string, password: string): Promise<TenantLoginResponse> {
