@@ -138,49 +138,51 @@ class ApiClient {
    * Returns Admin object with token on success, throws error on failure
    */
   async adminLogin({ email, password }: { email: string; password: string }): Promise<Admin> {
-    try {
-      console.log("[apiClient.adminLogin] Sending payload:", { email, password });
-      const response = await this.client.post<any>('/auth/admin/login', {
-        email,
-        password,
-      });
-      console.log("[apiClient.adminLogin] Response:", response);
+  try {
+    console.log("[apiClient.adminLogin] Sending payload:", { email, password });
 
-      let token = null;
-      // Extract token from possible response shapes
-      if ((response as any).token) {
-        token = (response as any).token;
-      } else if (response.data?.token) {
-        token = response.data.token;
-      } else if (response.data?.data?.token) {
-        token = response.data.data.token;
-      }
+    const response = await this.client.post('/auth/admin/login', {
+      email,
+      password,
+    });
 
-      if (token) {
-        const adminData = response.data?.data || response.data || {};
-        const admin = adminData as Admin;
-        admin.token = token;
-        this.token = token;
-        this.pgType = admin.pgType || adminData.pg_type || 'boys';
-        localStorage.setItem("admin_token", token);
-        localStorage.setItem('pg_type', this.pgType);
-        localStorage.setItem('admin_email', admin.email || email);
-        return admin;
-      }
+    console.log("[apiClient.adminLogin] Response:", response.data);
 
-      // If no token, throw error with backend message
-      throw new Error(response.data?.error || response.data?.message || 'Login failed');
-    } catch (error: any) {
-      // Log error details
-      if (error.response) {
-        console.error('[apiClient.adminLogin] API Error:', error.response.data);
-        throw new Error(error.response.data?.error || error.response.data?.message || 'Login failed');
-      }
-      console.error('[apiClient.adminLogin] Error:', error.message);
-      throw new Error(error.message || 'Login failed');
+    // ✅ adjust based on your backend response
+    const token =
+      response.data.token ||
+      response.data.data?.token;
+
+    const admin =
+      response.data.admin ||
+      response.data.data;
+
+    if (!token) {
+      throw new Error("No token received from backend");
     }
-  }
 
+    // ✅ STORE TOKEN (IMPORTANT)
+    localStorage.setItem("admin_token", token);
+
+    // optional
+    localStorage.setItem("admin_email", admin.email);
+
+    this.token = token;
+    this.pgType = admin.pgType || admin.pg_type || 'boys';
+
+    return {
+      ...admin,
+      token,
+    };
+
+  } catch (error: any) {
+    console.error("[apiClient.adminLogin] API Error:", error.response?.data || error.message);
+    throw new Error(error.response?.data?.error || "Login failed");
+  }
+}
+
+      
+   
   async verifyToken(): Promise<boolean> {
     try {
       const response = await this.client.post<ApiResponse<{ valid: boolean }>>('/auth/verify-token', {});
