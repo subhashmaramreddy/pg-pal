@@ -18,9 +18,18 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import GirlsAdminDashboard from "./pages/admin/GirlsAdminDashboard";
 import NotFound from "./pages/NotFound";
 
+import { useEffect } from "react";
+
 const queryClient = new QueryClient();
 
-const App = () => (
+const App = () => {
+  // Warmup ping for Render free tier cold starts
+  useEffect(() => {
+    const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+    fetch(`${apiUrl.replace(/\/api\/?$/, "")}/health`).catch(() => {});
+  }, []);
+
+  return (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -79,6 +88,7 @@ const App = () => (
       </TooltipProvider>
     </QueryClientProvider>
   </ErrorBoundary>
-);
+  );
+};
 
 export default App;

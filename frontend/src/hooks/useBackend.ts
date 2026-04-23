@@ -11,7 +11,7 @@ export const useRooms = (pgType: 'boys' | 'girls') => {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiClient.getRooms(pgType);
+      const data = await apiClient.getRooms();
       setRooms(data);
     } catch (err: any) {
       const message = err.response?.data?.error || 'Failed to fetch rooms';
@@ -38,7 +38,7 @@ export const useActiveTenants = (pgType: 'boys' | 'girls') => {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiClient.getActiveTenants(pgType);
+      const data = await apiClient.getActiveTenants();
       setTenants(data);
     } catch (err: any) {
       const message = err.response?.data?.error || 'Failed to fetch tenants';
@@ -65,7 +65,7 @@ export const usePendingJoiners = (pgType: 'boys' | 'girls') => {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiClient.getPendingJoiners(pgType);
+      const data = await apiClient.getPendingJoiners();
       setJoiners(data);
     } catch (err: any) {
       const message = err.response?.data?.error || 'Failed to fetch joiners';
@@ -92,7 +92,7 @@ export const usePayments = (pgType: 'boys' | 'girls') => {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiClient.getPaymentsByPG(pgType);
+      const data = await apiClient.getPaymentsByPG();
       setPayments(data);
     } catch (err: any) {
       const message = err.response?.data?.error || 'Failed to fetch payments';
@@ -119,7 +119,7 @@ export const useDashboardStats = (pgType: 'boys' | 'girls') => {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiClient.getDashboardStats(pgType);
+      const data = await apiClient.getDashboardStats();
       setStats(data);
     } catch (err: any) {
       const message = err.response?.data?.error || 'Failed to fetch dashboard stats';

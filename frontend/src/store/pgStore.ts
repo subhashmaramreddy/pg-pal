@@ -418,7 +418,7 @@ export const usePGStore = create<PGStore>()(
       // Data loading methods
       loadRooms: async (pgType: 'boys' | 'girls') => {
         try {
-          const apiRooms = await apiClient.getRooms(pgType);
+          const apiRooms = await apiClient.getRooms();
           const rooms: Room[] = apiRooms.map(r => ({
             number: r.roomNumber,
             floor: r.floor,
@@ -434,7 +434,7 @@ export const usePGStore = create<PGStore>()(
 
       loadTenants: async (pgType: 'boys' | 'girls') => {
         try {
-          const apiTenants = await apiClient.getActiveTenants(pgType);
+          const apiTenants = await apiClient.getActiveTenants();
           const tenants: Tenant[] = apiTenants.map(t => ({
             id: t.id,
             name: t.name,
@@ -461,7 +461,7 @@ export const usePGStore = create<PGStore>()(
 
       loadJoiners: async (pgType: 'boys' | 'girls') => {
         try {
-          const apiJoiners = await apiClient.getPendingJoiners(pgType);
+          const apiJoiners = await apiClient.getPendingJoiners();
           const joiners: Joiner[] = apiJoiners.map(j => ({
             id: j.id,
             fullName: j.name,
@@ -488,7 +488,7 @@ export const usePGStore = create<PGStore>()(
 
       loadPayments: async (pgType: 'boys' | 'girls') => {
         try {
-          const apiPayments = await apiClient.getPaymentsByPG(pgType);
+          const apiPayments = await apiClient.getPaymentsByPG();
           const payments: Payment[] = apiPayments.map(p => ({
             id: p.id,
             tenantId: p.tenantId,
@@ -508,15 +508,70 @@ export const usePGStore = create<PGStore>()(
 
       loadAllData: async (pgType: 'boys' | 'girls') => {
         try {
-          const { loadRooms, loadTenants, loadJoiners, loadPayments } = get();
-          await Promise.all([
-            loadRooms(pgType),
-            loadTenants(pgType),
-            loadJoiners(pgType),
-            loadPayments(pgType),
-          ]);
+          const dashboardData = await apiClient.getDashboardData();
+          
+          // Map backend data to frontend store structure using existing logic from individual loads
+          const rooms: Room[] = dashboardData.rooms.map(r => ({
+            number: r.roomNumber,
+            floor: r.floor,
+            status: r.occupants > 0 ? 'occupied' : 'available',
+            capacity: r.capacity,
+            tenantIds: [], // Store will handle this mapping
+          }));
+
+          const tenants: Tenant[] = dashboardData.tenants.map(t => ({
+            id: t.id,
+            name: t.name,
+            email: t.email,
+            mobile: t.phone,
+            parentMobile: '',
+            emergencyContact: '',
+            room: `${t.id.substring(0, 3)}`,
+            floor: 1,
+            college: t.college,
+            department: '',
+            status: 'active',
+            presenceStatus: 'present',
+            rentStatus: 'pending',
+            rentAmount: t.rent,
+            depositAmount: t.deposit,
+            joinDate: t.joinDate,
+          }));
+
+          const joiners: Joiner[] = dashboardData.joiners.map(j => ({
+            id: j.id,
+            fullName: j.name,
+            email: j.email,
+            mobile: j.phone,
+            parentMobile: '',
+            emergencyContact: '',
+            gender: j.gender,
+            college: j.college,
+            department: '',
+            year: '',
+            idProofType: 'aadhaar',
+            pgType: j.pgType,
+            roomType: j.roomType,
+            joiningDate: j.joinDate,
+            applicationDate: new Date(j.createdAt).toISOString().split("T")[0],
+            status: 'pending',
+          }));
+
+          const payments: Payment[] = dashboardData.payments.map(p => ({
+            id: p.id,
+            tenantId: p.tenantId,
+            tenantName: p.tenantName,
+            room: p.roomNumber,
+            amount: p.amount,
+            month: p.month,
+            status: p.status,
+            paidDate: p.paidDate,
+            method: 'online',
+          }));
+
+          set({ rooms, tenants, joiners, payments });
         } catch (error) {
-          console.error('Failed to load all data:', error);
+          console.error('Failed to load all dashboard data:', error);
         }
       },
 

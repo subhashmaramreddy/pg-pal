@@ -40,6 +40,26 @@ router.get('/stats', async (req: AuthRequest, res: Response) => {
   }
 });
 
+router.get('/dashboard', async (req: AuthRequest, res: Response) => {
+  try {
+    const pgType = req.pgType as 'boys' | 'girls';
+    if (!pgType) {
+      return res.status(400).json({ success: false, error: 'Invalid PG type' });
+    }
+
+    const [rooms, tenants, joiners, payments] = await Promise.all([
+      getRooms(pgType),
+      getActiveTenants(pgType),
+      getPendingJoiners(pgType),
+      getPaymentsByPG(pgType)
+    ]);
+
+    res.json({ success: true, data: { rooms, tenants, joiners, payments } });
+  } catch (error) {
+    res.status(500).json({ success: false, error: (error as Error).message });
+  }
+});
+
 // ==================== JOINER APPROVALS ====================
 
 router.get('/joiners', async (req: AuthRequest, res: Response) => {

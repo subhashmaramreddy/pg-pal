@@ -208,14 +208,19 @@ class ApiClient {
   }
 
   // ===== DASHBOARD =====
-  async getDashboardStats(pgType: 'boys' | 'girls'): Promise<DashboardStats> {
-    const response = await this.client.get<ApiResponse<DashboardStats>>(`/admin/stats?pgType=${pgType}`);
+  async getDashboardStats(): Promise<DashboardStats> {
+    const response = await this.client.get<ApiResponse<DashboardStats>>(`/admin/stats`);
+    return response.data.data!;
+  }
+
+  async getDashboardData(): Promise<{ rooms: Room[], tenants: Tenant[], joiners: Joiner[], payments: Payment[] }> {
+    const response = await this.client.get<ApiResponse<{ rooms: Room[], tenants: Tenant[], joiners: Joiner[], payments: Payment[] }>>(`/admin/dashboard`);
     return response.data.data!;
   }
 
   // ===== ROOMS =====
-  async getRooms(pgType: 'boys' | 'girls'): Promise<Room[]> {
-    const response = await this.client.get<ApiResponse<Room[]>>(`/admin/rooms?pgType=${pgType}`);
+  async getRooms(): Promise<Room[]> {
+    const response = await this.client.get<ApiResponse<Room[]>>(`/admin/rooms`);
     return response.data.data ?? [];
   }
 
@@ -237,8 +242,8 @@ class ApiClient {
   }
 
   // ===== TENANTS =====
-  async getActiveTenants(pgType: 'boys' | 'girls'): Promise<Tenant[]> {
-    const response = await this.client.get<ApiResponse<Tenant[]>>(`/admin/tenants?pgType=${pgType}`);
+  async getActiveTenants(): Promise<Tenant[]> {
+    const response = await this.client.get<ApiResponse<Tenant[]>>(`/admin/tenants`);
     return response.data.data ?? [];
   }
 
@@ -275,8 +280,8 @@ class ApiClient {
   }
 
   // ===== JOINERS / APPLICATIONS =====
-  async getPendingJoiners(pgType: 'boys' | 'girls'): Promise<Joiner[]> {
-    const response = await this.client.get<ApiResponse<Joiner[]>>(`/admin/joiners?pgType=${pgType}&status=pending`);
+  async getPendingJoiners(): Promise<Joiner[]> {
+    const response = await this.client.get<ApiResponse<Joiner[]>>(`/admin/joiners`);
     return response.data.data ?? [];
   }
 
@@ -321,8 +326,8 @@ class ApiClient {
   }
 
   // ===== PAYMENTS =====
-  async getPaymentsByPG(pgType: 'boys' | 'girls'): Promise<Payment[]> {
-    const response = await this.client.get<ApiResponse<Payment[]>>(`/admin/payments?pgType=${pgType}`);
+  async getPaymentsByPG(): Promise<Payment[]> {
+    const response = await this.client.get<ApiResponse<Payment[]>>(`/admin/payments`);
     return response.data.data ?? [];
   }
 

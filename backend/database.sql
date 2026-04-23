@@ -122,6 +122,7 @@ CREATE INDEX idx_joiners_pg_type_status ON joiners(pg_type, status);
 CREATE INDEX idx_rooms_pg_type_status ON rooms(pg_type, status);
 CREATE INDEX idx_tenants_pg_type ON tenants(pg_type);
 CREATE INDEX idx_payments_tenant_id ON payments(tenant_id);
+CREATE INDEX idx_payments_pg_type ON payments(pg_type);
 CREATE INDEX idx_leaves_tenant_id ON leaves(tenant_id);
 
 -- ==================== HELPER VIEWS ====================

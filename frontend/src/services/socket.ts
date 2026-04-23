@@ -24,7 +24,8 @@ class SocketService {
   private isConnecting: boolean = false;
 
   constructor(url: string = import.meta.env.VITE_API_URL || "http://localhost:5000") {
-    this.url = url;
+    // Strip /api from the URL to avoid connecting to the /api namespace
+    this.url = url.replace(/\/api\/?$/, "");
   }
 
   /**
