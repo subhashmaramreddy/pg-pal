@@ -3,6 +3,112 @@ import { hashPassword, comparePasswords } from '../utils/password.js';
 import { JoinerApplication, Tenant, Payment, Room, DashboardStats, PastTenant, Leave } from '../types/index.js';
 import { ApiResponse, PaginatedResponse } from '../types/index.js';
 
+// ==================== MAPPERS ====================
+
+function mapTenant(row: any): Tenant {
+  if (!row) throw new Error("Cannot map null row to Tenant");
+  if (!row.pg_type) throw new Error("Invalid DB row: pg_type missing");
+
+  return {
+    id: row.id,
+    joinerId: row.joiner_id,
+    roomId: row.room_id,
+    name: row.name,
+    email: row.email,
+    phone: row.phone,
+    gender: row.gender,
+    college: row.college,
+    department: row.department,
+    year: row.year,
+    aadhaarUrl: row.aadhaar_url,
+    collegeIdUrl: row.college_id_url,
+    pgType: row.pg_type,
+    roomType: row.room_type,
+    rent: row.rent,
+    deposit: row.deposit,
+    joinDate: row.join_date,
+    status: row.status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
+function mapJoiner(row: any): JoinerApplication {
+  if (!row) throw new Error("Cannot map null row to JoinerApplication");
+  if (!row.pg_type) throw new Error("Invalid DB row: pg_type missing");
+
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    phone: row.phone,
+    gender: row.gender,
+    college: row.college,
+    department: row.department,
+    year: row.year,
+    aadhaarUrl: row.aadhaar_url,
+    collegeIdUrl: row.college_id_url,
+    pgType: row.pg_type,
+    roomType: row.room_type,
+    joinDate: row.join_date,
+    status: row.status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
+function mapRoom(row: any): Room {
+  if (!row) throw new Error("Cannot map null row to Room");
+  
+  return {
+    id: row.id,
+    pgType: row.pg_type,
+    roomNumber: row.room_number,
+    floor: row.floor,
+    capacity: row.capacity,
+    occupants: row.occupants,
+    status: row.status,
+    tenantIds: [], // Explicitly setting this, as DB might not store it directly on the row
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
+function mapPayment(row: any): Payment {
+  if (!row) throw new Error("Cannot map null row to Payment");
+  
+  return {
+    id: row.id,
+    tenantId: row.tenant_id,
+    pgType: row.pg_type,
+    amount: row.amount,
+    month: row.month,
+    status: row.status,
+    paymentMethod: row.payment_method,
+    transactionId: row.transaction_id,
+    dueDate: row.due_date || new Date().toISOString(), // Fallback if missing in DB
+    paidDate: row.paid_date,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
+function mapLeave(row: any): Leave {
+  if (!row) throw new Error("Cannot map null row to Leave");
+  
+  return {
+    id: row.id,
+    tenantId: row.tenant_id,
+    pgType: row.pg_type,
+    startDate: row.start_date,
+    endDate: row.end_date,
+    reason: row.reason,
+    status: row.status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
 // ==================== ADMIN OPERATIONS ====================
 
 export async function createAdmin(
@@ -74,7 +180,7 @@ export async function submitJoinerApplication(
       values
     );
 
-    return { success: true, data: result.rows[0] as JoinerApplication };
+    return { success: true, data: mapJoiner(result.rows[0]) };
   } catch (error) {
     return { success: false, error: (error as Error).message };
   }
@@ -86,7 +192,7 @@ export async function getPendingJoiners(pgType: 'boys' | 'girls'): Promise<Joine
       'SELECT * FROM joiners WHERE pg_type = $1 AND status = $2 ORDER BY created_at DESC',
       [pgType, 'pending']
     );
-    return result.rows;
+    return result.rows.map(mapJoiner);
   } catch (error) {
     console.error('Error fetching pending joiners:', error);
     return [];
@@ -148,7 +254,7 @@ export async function approveJoiner(
     // Update room occupancy
     await updateRoomOccupancy(roomId);
 
-    return { success: true, data: tenant as Tenant };
+    return { success: true, data: mapTenant(tenant) };
   } catch (error) {
     return { success: false, error: (error as Error).message };
   }
@@ -172,7 +278,7 @@ export async function getActiveTenants(pgType: 'boys' | 'girls'): Promise<Tenant
       'SELECT * FROM tenants WHERE pg_type = $1 ORDER BY created_at DESC',
       [pgType]
     );
-    return result.rows;
+    return result.rows.map(mapTenant);
   } catch (error) {
     console.error('Error fetching active tenants:', error);
     return [];
@@ -183,7 +289,7 @@ export async function getTenantById(tenantId: string): Promise<Tenant | null> {
   try {
     const result = await pool.query('SELECT * FROM tenants WHERE id = $1 LIMIT 1', [tenantId]);
     if (result.rows.length === 0) return null;
-    return result.rows[0] as Tenant;
+    return mapTenant(result.rows[0]);
   } catch (error) {
     return null;
   }
@@ -198,7 +304,7 @@ export async function searchTenants(
       'SELECT * FROM tenants WHERE pg_type = $1 AND (name ILIKE $2 OR email ILIKE $2 OR phone ILIKE $2)',
       [pgType, `%${query}%`]
     );
-    return result.rows;
+    return result.rows.map(mapTenant);
   } catch (error) {
     console.error('Error searching tenants:', error);
     return [];
@@ -215,7 +321,7 @@ export async function updateTenantPresence(
       [status, tenantId]
     );
     if (result.rows.length === 0) throw new Error('Tenant not found');
-    return { success: true, data: result.rows[0] as Tenant };
+    return { success: true, data: mapTenant(result.rows[0]) };
   } catch (error) {
     return { success: false, error: (error as Error).message };
   }
@@ -239,9 +345,9 @@ export async function vacateTenant(tenantId: string): Promise<ApiResponse<null>>
         tenant.phone, 
         tenant.gender, 
         tenant.college, 
-        (tenant as any).pgType || (tenant as any).pg_type, 
-        (tenant as any).roomId || (tenant as any).room_id, 
-        (tenant as any).joinDate || (tenant as any).join_date, 
+        tenant.pgType, 
+        tenant.roomId, 
+        tenant.joinDate, 
         new Date().toISOString(), 
         tenant.rent
       ]
@@ -251,7 +357,7 @@ export async function vacateTenant(tenantId: string): Promise<ApiResponse<null>>
     await pool.query('DELETE FROM tenants WHERE id = $1', [tenantId]);
 
     // Update room occupancy
-    await updateRoomOccupancy((tenant as any).roomId || (tenant as any).room_id);
+    await updateRoomOccupancy(tenant.roomId);
 
     return { success: true, data: null };
   } catch (error) {
@@ -274,11 +380,11 @@ export async function shiftTenant(tenantId: string, newRoomId: string): Promise<
     const updatedTenant = result.rows[0];
 
     // Update old room occupancy
-    await updateRoomOccupancy((tenant as any).roomId || (tenant as any).room_id);
+    await updateRoomOccupancy(tenant.roomId);
     // Update new room occupancy
     await updateRoomOccupancy(newRoomId);
 
-    return { success: true, data: updatedTenant as Tenant };
+    return { success: true, data: mapTenant(updatedTenant) };
   } catch (error) {
     return { success: false, error: (error as Error).message };
   }
@@ -292,7 +398,7 @@ export async function getRooms(pgType: 'boys' | 'girls'): Promise<Room[]> {
       'SELECT * FROM rooms WHERE pg_type = $1 ORDER BY floor ASC, room_number ASC',
       [pgType]
     );
-    return result.rows;
+    return result.rows.map(mapRoom);
   } catch (error) {
     console.error('Error fetching rooms:', error);
     return [];
@@ -303,7 +409,7 @@ export async function getRoomById(roomId: string): Promise<Room | null> {
   try {
     const result = await pool.query('SELECT * FROM rooms WHERE id = $1 LIMIT 1', [roomId]);
     if (result.rows.length === 0) return null;
-    return result.rows[0] as Room;
+    return mapRoom(result.rows[0]);
   } catch (error) {
     return null;
   }
@@ -316,7 +422,7 @@ export async function updateRoomCapacity(roomId: string, capacity: number): Prom
       [capacity, roomId]
     );
     if (result.rows.length === 0) throw new Error('Room not found');
-    return { success: true, data: result.rows[0] as Room };
+    return { success: true, data: mapRoom(result.rows[0]) };
   } catch (error) {
     return { success: false, error: (error as Error).message };
   }
@@ -389,7 +495,7 @@ export async function createPayment(payment: Omit<Payment, 'id' | 'createdAt' | 
       values
     );
 
-    return { success: true, data: result.rows[0] as Payment };
+    return { success: true, data: mapPayment(result.rows[0]) };
   } catch (error) {
     return { success: false, error: (error as Error).message };
   }
@@ -403,7 +509,7 @@ export async function getPaymentsByTenant(tenantId: string): Promise<Payment[]> 
       'SELECT * FROM payments WHERE "tenantId" = $1 OR tenant_id = $1 ORDER BY created_at DESC',
       [tenantId]
     );
-    return result.rows;
+    return result.rows.map(mapPayment);
   } catch (error) {
     console.error('Error fetching payments:', error);
     return [];
@@ -416,7 +522,7 @@ export async function getPaymentsByPG(pgType: 'boys' | 'girls'): Promise<Payment
       'SELECT * FROM payments WHERE pg_type = $1 ORDER BY created_at DESC',
       [pgType]
     );
-    return result.rows;
+    return result.rows.map(mapPayment);
   } catch (error) {
     console.error('Error fetching payments:', error);
     return [];
@@ -453,7 +559,7 @@ export async function markPaymentAsPaid(paymentId: string, paymentMethod: string
     });
 
     if (result.rows.length === 0) throw new Error('Payment not found');
-    return { success: true, data: result.rows[0] as Payment };
+    return { success: true, data: mapPayment(result.rows[0]) };
   } catch (error) {
     return { success: false, error: (error as Error).message };
   }
@@ -473,7 +579,7 @@ export async function requestLeave(leave: Omit<Leave, 'id' | 'status' | 'created
       values
     );
 
-    return { success: true, data: result.rows[0] as Leave };
+    return { success: true, data: mapLeave(result.rows[0]) };
   } catch (error) {
     return { success: false, error: (error as Error).message };
   }
@@ -485,7 +591,7 @@ export async function getLeavesByTenant(tenantId: string): Promise<Leave[]> {
       'SELECT * FROM leaves WHERE "tenantId" = $1 OR tenant_id = $1 ORDER BY created_at DESC',
       [tenantId]
     );
-    return result.rows;
+    return result.rows.map(mapLeave);
   } catch (error) {
     console.error('Error fetching leaves:', error);
     return [];
@@ -499,7 +605,7 @@ export async function approveLeave(leaveId: string): Promise<ApiResponse<Leave>>
       ['approved', leaveId]
     );
     if (result.rows.length === 0) throw new Error('Leave not found');
-    return { success: true, data: result.rows[0] as Leave };
+    return { success: true, data: mapLeave(result.rows[0]) };
   } catch (error) {
     return { success: false, error: (error as Error).message };
   }

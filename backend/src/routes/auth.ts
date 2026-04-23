@@ -1,12 +1,14 @@
-import { Router, Response } from 'express';
-import { AuthRequest } from '../types/express.js';
+import { Router, Request, Response } from 'express';
+import bcrypt from 'bcrypt';
 import { generateToken, verifyToken } from '../utils/jwt.js';
-import { getAdminByEmail, verifyAdminPassword, createAdmin } from '../services/database.js';
+import { getAdminByEmail, createAdmin } from '../services/database.js';
+import { AuthRequest } from '../types/express.js';
+import pool from '../utils/db.js';
 
 const router = Router();
 
 // Admin Login
-router.post('/admin/login', async (req, res) => {
+router.post('/admin/login', async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
@@ -33,7 +35,7 @@ router.post('/admin/login', async (req, res) => {
 
     const admin = adminResult.rows[0];
 
-    // 3. Check password (bcrypt assumed)
+    // 3. Check password (bcrypt)
     const isMatch = await bcrypt.compare(password, admin.password);
 
     if (!isMatch) {
@@ -43,26 +45,23 @@ router.post('/admin/login', async (req, res) => {
       });
     }
 
-    // 4. 🔥 FETCH PGs (NEW LOGIC)
+    // 4. Fetch PGs
     const pgResult = await pool.query(
       'SELECT id, pg_type, name FROM pgs WHERE admin_id = $1',
       [admin.id]
     );
 
-    // 5. Generate token (if you are using JWT)
-    const token = jwt.sign(
-      { id: admin.id, email: admin.email },
-      process.env.JWT_SECRET,
-      { expiresIn: '1d' }
-    );
+    // 5. Generate token using utility — include pg_type so authMiddleware can set req.pgType
+    const token = generateToken(admin.id, admin.email, 'admin', admin.pg_type);
 
-    // 6. ✅ FINAL RESPONSE (UPDATED)
+    // 6. Response — pgType only (camelCase). pg_type stays in DB but never on the API surface.
     return res.json({
       success: true,
       token,
       admin: {
         id: admin.id,
-        email: admin.email
+        email: admin.email,
+        pgType: admin.pg_type,
       },
       pgs: pgResult.rows
     });
@@ -75,6 +74,7 @@ router.post('/admin/login', async (req, res) => {
     });
   }
 });
+
 // Admin Register (for first-time setup)
 router.post('/admin/register', async (req: AuthRequest, res: Response) => {
   try {
@@ -95,18 +95,18 @@ router.post('/admin/register', async (req: AuthRequest, res: Response) => {
       return res.status(400).json(result);
     }
 
-    const admin = await getAdminByEmail(email);
-    if (!admin) {
+    const adminData = await getAdminByEmail(email);
+    if (!adminData) {
       return res.status(404).json({ success: false, error: 'Failed to create admin' });
     }
 
-    const token = generateToken(admin.id, admin.email, 'admin', admin.pgType);
+    const token = generateToken(adminData.id, adminData.email, 'admin', adminData.pgType);
 
     res.status(201).json({
       success: true,
       data: {
         token,
-        admin: { id: admin.id, email: admin.email, pgType: admin.pgType }
+        admin: { id: adminData.id, email: adminData.email, pgType: adminData.pgType }
       }
     });
   } catch (error) {
@@ -115,23 +115,28 @@ router.post('/admin/register', async (req: AuthRequest, res: Response) => {
 });
 
 // Verify Token
-router.post('/verify-token', (req, res) => {
+router.post('/verify-token', (req: Request, res: Response) => {
   try {
-    console.log("HEADERS:", req.headers); // 👈 TEMP DEBUG — remove after fix confirmed
+    console.log("VERIFY-TOKEN called, auth header present:", !!req.headers.authorization);
 
     const authHeader = req.headers.authorization;
 
     if (!authHeader) {
-      return res.status(400).json({ success: false });
+      return res.status(400).json({ success: false, error: 'No authorization header' });
     }
 
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.split(' ')[1];
 
     if (!token) {
-      return res.status(400).json({ success: false });
+      return res.status(400).json({ success: false, error: 'No token in header' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Use the utility function (same JWT_SECRET as login)
+    const decoded = verifyToken(token);
+
+    if (!decoded) {
+      return res.status(401).json({ success: false, error: 'Invalid or expired token' });
+    }
 
     return res.json({
       success: true,
@@ -139,9 +144,8 @@ router.post('/verify-token', (req, res) => {
     });
 
   } catch (err) {
-    return res.status(401).json({
-      success: false
-    });
+    console.error('Verify token error:', err);
+    return res.status(401).json({ success: false, error: 'Token verification failed' });
   }
 });
 

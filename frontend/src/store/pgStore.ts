@@ -181,10 +181,10 @@ export const usePGStore = create<PGStore>()(
             department: '',
             year: '',
             idProofType: 'aadhaar',
-            pgType: apiJoiner.pg_type,
-            roomType: apiJoiner.room_type,
-            joiningDate: apiJoiner.join_date,
-            applicationDate: new Date(apiJoiner.created_at).toISOString().split("T")[0],
+            pgType: apiJoiner.pgType,
+            roomType: apiJoiner.roomType,
+            joiningDate: apiJoiner.joinDate,
+            applicationDate: new Date(apiJoiner.createdAt).toISOString().split("T")[0],
             status: "pending",
           };
           set((state) => ({
@@ -215,7 +215,7 @@ export const usePGStore = create<PGStore>()(
             rentStatus: "pending",
             rentAmount: tenant.rent,
             depositAmount: tenant.deposit,
-            joinDate: tenant.join_date,
+            joinDate: tenant.joinDate,
           };
 
           const newPayment: Payment = {
@@ -420,7 +420,7 @@ export const usePGStore = create<PGStore>()(
         try {
           const apiRooms = await apiClient.getRooms(pgType);
           const rooms: Room[] = apiRooms.map(r => ({
-            number: r.room_number,
+            number: r.roomNumber,
             floor: r.floor,
             status: r.occupants > 0 ? 'occupied' : 'available',
             capacity: r.capacity,
@@ -451,7 +451,7 @@ export const usePGStore = create<PGStore>()(
             rentStatus: 'pending',
             rentAmount: t.rent,
             depositAmount: t.deposit,
-            joinDate: t.join_date,
+            joinDate: t.joinDate,
           }));
           set({ tenants });
         } catch (error) {
@@ -474,10 +474,10 @@ export const usePGStore = create<PGStore>()(
             department: '',
             year: '',
             idProofType: 'aadhaar',
-            pgType: j.pg_type,
-            roomType: j.room_type,
-            joiningDate: j.join_date,
-            applicationDate: new Date(j.created_at).toISOString().split("T")[0],
+            pgType: j.pgType,
+            roomType: j.roomType,
+            joiningDate: j.joinDate,
+            applicationDate: new Date(j.createdAt).toISOString().split("T")[0],
             status: j.status as 'pending' | 'approved' | 'rejected',
           }));
           set({ joiners });
@@ -491,13 +491,13 @@ export const usePGStore = create<PGStore>()(
           const apiPayments = await apiClient.getPaymentsByPG(pgType);
           const payments: Payment[] = apiPayments.map(p => ({
             id: p.id,
-            tenantId: p.tenant_id,
+            tenantId: p.tenantId,
             tenantName: '', // Will be populated from tenants
             room: '',
             amount: p.amount,
             month: p.month,
             status: p.status as 'paid' | 'pending',
-            paidDate: p.paid_date,
+            paidDate: p.paidDate,
             method: 'online',
           }));
           set({ payments });

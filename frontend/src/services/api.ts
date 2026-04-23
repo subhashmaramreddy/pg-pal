@@ -110,9 +110,11 @@ class ApiClient {
       },
     });
 
-    // Add token to every request
+    // Add token to every request — check both admin and tenant tokens
     this.client.interceptors.request.use((config) => {
-      const token = localStorage.getItem("admin_token");
+      const token =
+        localStorage.getItem("admin_token") ||
+        localStorage.getItem("auth_token");
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -138,48 +140,36 @@ class ApiClient {
    * Returns Admin object with token on success, throws error on failure
    */
   async adminLogin({ email, password }: { email: string; password: string }): Promise<Admin> {
-  try {
-    console.log("[apiClient.adminLogin] Sending payload:", { email, password });
+    try {
+      console.log("[apiClient.adminLogin] Sending payload:", { email, password });
 
-    const response = await this.client.post('/auth/admin/login', {
-      email,
-      password,
-    });
+      const response = await this.client.post('/auth/admin/login', { email, password });
 
-    console.log("[apiClient.adminLogin] Response:", response.data);
+      console.log("[apiClient.adminLogin] Response:", response.data);
 
-    // ✅ adjust based on your backend response
-    const token =
-      response.data.token ||
-      response.data.data?.token;
+      const token = response.data.token || response.data.data?.token;
+      const admin = response.data.admin || response.data.data;
 
-    const admin =
-      response.data.admin ||
-      response.data.data;
+      if (!token) throw new Error("No token received from backend");
+      if (!admin) throw new Error("No admin data received from backend");
 
-    if (!token) {
-      throw new Error("No token received from backend");
+      // pgType is always present — backend embeds it in JWT and returns it in admin object
+      const pgType: 'boys' | 'girls' = admin.pgType || 'boys';
+
+      // Store in localStorage
+      localStorage.setItem("admin_token", token);
+      localStorage.setItem("admin_email", admin.email);
+      localStorage.setItem("pg_type", pgType);
+
+      this.token = token;
+      this.pgType = pgType;
+
+      return { ...admin, pgType, token };
+    } catch (error: any) {
+      console.error("[apiClient.adminLogin] API Error:", error.response?.data || error.message);
+      throw new Error(error.response?.data?.error || "Login failed");
     }
-
-    // ✅ STORE TOKEN (IMPORTANT)
-    localStorage.setItem("admin_token", token);
-
-    // optional
-    localStorage.setItem("admin_email", admin.email);
-
-    this.token = token;
-    this.pgType = admin.pgType || admin.pg_type || 'boys';
-
-    return {
-      ...admin,
-      token,
-    };
-
-  } catch (error: any) {
-    console.error("[apiClient.adminLogin] API Error:", error.response?.data || error.message);
-    throw new Error(error.response?.data?.error || "Login failed");
   }
-}
 
       
    

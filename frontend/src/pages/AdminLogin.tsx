@@ -41,7 +41,7 @@ export default function AdminLogin() {
     try {
       const admin = await apiClient.adminLogin({ email: data.email, password: data.password });
       toast.success("Admin login successful!");
-      // Store JWT token in localStorage (already handled in apiClient)
+      // pgType comes from JWT — no localStorage fallback needed
       if (admin.pgType === 'girls') {
         navigate("/admin/girls-dashboard");
       } else {
