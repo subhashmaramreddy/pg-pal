@@ -131,43 +131,54 @@ class ApiClient {
     );
   }
 
+
   // ===== AUTHENTICATION =====
-  async adminLogin(email: string, password: string): Promise<Admin> {
-    const response = await this.client.post<any>('/auth/admin/login', {
-      email,
-      password,
-    });
+  /**
+   * Admin login: expects { email, password }
+   * Returns Admin object with token on success, throws error on failure
+   */
+  async adminLogin({ email, password }: { email: string; password: string }): Promise<Admin> {
+    try {
+      console.log("[apiClient.adminLogin] Sending payload:", { email, password });
+      const response = await this.client.post<any>('/auth/admin/login', {
+        email,
+        password,
+      });
+      console.log("[apiClient.adminLogin] Response:", response);
 
-    console.log("LOGIN RESPONSE:", response);
+      let token = null;
+      // Extract token from possible response shapes
+      if ((response as any).token) {
+        token = (response as any).token;
+      } else if (response.data?.token) {
+        token = response.data.token;
+      } else if (response.data?.data?.token) {
+        token = response.data.data.token;
+      }
 
-    let token = null;
+      if (token) {
+        const adminData = response.data?.data || response.data || {};
+        const admin = adminData as Admin;
+        admin.token = token;
+        this.token = token;
+        this.pgType = admin.pgType || adminData.pg_type || 'boys';
+        localStorage.setItem("admin_token", token);
+        localStorage.setItem('pg_type', this.pgType);
+        localStorage.setItem('admin_email', admin.email || email);
+        return admin;
+      }
 
-    // Correctly extract the JWT token based on response shape:
-    if ((response as any).token) {
-      token = (response as any).token;
-    } else if (response.data?.token) {
-      token = response.data.token;
-    } else if (response.data?.data?.token) {
-      token = response.data.data.token;
+      // If no token, throw error with backend message
+      throw new Error(response.data?.error || response.data?.message || 'Login failed');
+    } catch (error: any) {
+      // Log error details
+      if (error.response) {
+        console.error('[apiClient.adminLogin] API Error:', error.response.data);
+        throw new Error(error.response.data?.error || error.response.data?.message || 'Login failed');
+      }
+      console.error('[apiClient.adminLogin] Error:', error.message);
+      throw new Error(error.message || 'Login failed');
     }
-
-    if (token) {
-      // Create admin object from whatever data we have
-      const adminData = response.data?.data || response.data || {};
-      const admin = adminData as Admin;
-      
-      admin.token = token;
-      this.token = token;
-      this.pgType = admin.pgType || adminData.pg_type || 'boys'; // Fallback if pgType is missing
-      
-      localStorage.setItem("admin_token", token);
-      localStorage.setItem('pg_type', this.pgType);
-      localStorage.setItem('admin_email', admin.email || email);
-      
-      return admin;
-    }
-
-    throw new Error(response.data?.message || 'Login failed');
   }
 
   async verifyToken(): Promise<boolean> {

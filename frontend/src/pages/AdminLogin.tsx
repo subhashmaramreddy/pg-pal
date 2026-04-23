@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -14,7 +15,7 @@ import { LogIn, Shield } from "lucide-react";
 import apiClient from "@/services/api";
 
 const adminLoginSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
+  email: z.string().email("Enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
@@ -23,34 +24,33 @@ type AdminLoginFormData = z.infer<typeof adminLoginSchema>;
 export default function AdminLogin() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const form = useForm<AdminLoginFormData>({
     resolver: zodResolver(adminLoginSchema),
     defaultValues: {
-      username: "",
-      password: "",
+      email: "",
+      password: ""
     },
   });
 
   const onSubmit = async (data: AdminLoginFormData) => {
     setIsLoading(true);
-    console.log("Admin login attempt:", data);
-
+    setError(null);
+    console.log("Admin login attempt payload:", data);
     try {
-      // Call actual API login
-      const admin = await apiClient.adminLogin(data.username, data.password);
-      
+      const admin = await apiClient.adminLogin({ email: data.email, password: data.password });
       toast.success("Admin login successful!");
-      
-      // Determine which dashboard to navigate to based on PG type
+      // Store JWT token in localStorage (already handled in apiClient)
       if (admin.pgType === 'girls') {
         navigate("/admin/girls-dashboard");
       } else {
         navigate("/admin/dashboard");
       }
     } catch (error: any) {
+      setError(error?.message || "Invalid email or password");
+      toast.error(error?.message || "Invalid email or password");
       console.error("Admin login failed:", error);
-      toast.error(error.message || "Invalid username or password");
     } finally {
       setIsLoading(false);
     }
@@ -59,7 +59,6 @@ export default function AdminLogin() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      
       <main className="flex-1 flex items-center justify-center py-12 px-4 bg-secondary">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
@@ -76,18 +75,17 @@ export default function AdminLogin() {
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="username"
+                  name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Username</FormLabel>
+                      <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="admin" {...field} />
+                        <Input placeholder="admin@pgpal.com" type="email" autoComplete="email" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="password"
@@ -95,13 +93,15 @@ export default function AdminLogin() {
                     <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="••••••••" {...field} />
+                        <Input type="password" placeholder="********" autoComplete="current-password" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-
+                {error && (
+                  <div className="text-red-600 text-sm text-center">{error}</div>
+                )}
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? (
                     "Logging in..."
@@ -117,7 +117,6 @@ export default function AdminLogin() {
           </CardContent>
         </Card>
       </main>
-
       <Footer />
     </div>
   );
