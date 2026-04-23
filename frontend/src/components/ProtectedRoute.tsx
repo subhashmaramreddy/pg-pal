@@ -19,52 +19,50 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
 
   const checkAuthentication = async () => {
     try {
-      // Determine which token to check based on role
-      let token = null;
+      let token: string | null = null;
+
+      // Get token
       if (requiredRole === "admin") {
         token = localStorage.getItem("admin_token");
       } else if (requiredRole === "tenant") {
-        token = localStorage.getItem("auth_token") || localStorage.getItem("tenant_token");
+        token =
+          localStorage.getItem("tenant_token") ||
+          localStorage.getItem("auth_token");
       } else {
-        token = localStorage.getItem("admin_token") || localStorage.getItem("auth_token") || localStorage.getItem("tenant_token");
+        token =
+          localStorage.getItem("admin_token") ||
+          localStorage.getItem("tenant_token") ||
+          localStorage.getItem("auth_token");
       }
-      
+
       if (!token) {
         setIsAuthenticated(false);
         setHasRequiredRole(false);
         return;
       }
 
-      // Verify token is still valid
+      // ✅ verify token (backend call)
       const isValid = await apiClient.verifyToken();
       setIsAuthenticated(isValid);
 
-      // Check role if required
+      // Role check
       if (isValid && requiredRole) {
         if (requiredRole === "admin") {
-          const pgType = localStorage.getItem("pg_type");
-          const adminEmail = localStorage.getItem("admin_email");
-          // Assuming an admin token means they are admin, but checking pgType as well
-          setHasRequiredRole(!!pgType && !!adminEmail);
+          setHasRequiredRole(!!localStorage.getItem("admin_token"));
         } else if (requiredRole === "tenant") {
-          const tenantId = localStorage.getItem("tenant_id");
-          setHasRequiredRole(!!tenantId);
+          setHasRequiredRole(!!localStorage.getItem("tenant_id"));
         }
       } else {
         setHasRequiredRole(isValid);
       }
     } catch (error) {
-      console.error("Authentication check failed:", error);
+      console.error("Auth check failed:", error);
       setIsAuthenticated(false);
       setHasRequiredRole(false);
-    } finally {
-      // Always ensure we don't stay in loading state
-      setIsAuthenticated(prev => prev === null ? false : prev);
-      setHasRequiredRole(prev => prev === null ? false : prev);
     }
   };
 
-  // Loading state
+  // Loading
   if (isAuthenticated === null || (requiredRole && hasRequiredRole === null)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -76,7 +74,7 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
     );
   }
 
-  // Not authenticated - redirect to appropriate login
+  // Not logged in
   if (!isAuthenticated) {
     const loginPath = requiredRole === "admin" ? "/admin/login" : "/login";
     return <Navigate to={loginPath} state={{ from: location }} replace />;
@@ -87,6 +85,5 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
     return <Navigate to="/" replace />;
   }
 
-  // Authenticated and authorized
   return <>{children}</>;
 }
