@@ -117,6 +117,8 @@ router.post('/admin/register', async (req: AuthRequest, res: Response) => {
 // Verify Token
 router.post('/verify-token', (req, res) => {
   try {
+    console.log("HEADERS:", req.headers); // 👈 TEMP DEBUG — remove after fix confirmed
+
     const authHeader = req.headers.authorization;
 
     if (!authHeader) {
