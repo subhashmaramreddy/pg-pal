@@ -85,25 +85,43 @@ export default function AdminDashboard() {
   // Socket connection for real-time updates
   useSocket();
 
-  // Load data on mount
+  // Load data and verify auth on mount
   useEffect(() => {
-    const loadData = async () => {
+    const verifyAuthAndLoadData = async () => {
+      // Read token from localStorage
+      const token = localStorage.getItem("admin_token");
+      
+      // If missing -> redirect to /admin/login
+      if (!token) {
+        navigate("/admin/login");
+        return;
+      }
+
       try {
         setLoading(true);
+        // Wrap verification call in try/catch/finally
+        const isValid = await apiClient.verifyToken();
+        if (!isValid) {
+          throw new Error("Token verification failed");
+        }
+        
         const pgType = localStorage.getItem('pg_type') as 'boys' | 'girls';
         if (pgType) {
           await loadAllData(pgType);
         }
       } catch (error) {
-        console.error('Failed to load data:', error);
-        toast.error('Failed to load dashboard data');
+        console.error('Verification/Load failed:', error);
+        toast.error('Session expired or failed to load data');
+        // On error -> redirect to login
+        navigate("/admin/login");
       } finally {
+        // Always stop loading in finally
         setLoading(false);
       }
     };
 
-    loadData();
-  }, [loadAllData]);
+    verifyAuthAndLoadData();
+  }, [loadAllData, navigate]);
 
   const stats = getStats();
   const activeTenants = getActiveTenants();

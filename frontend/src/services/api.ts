@@ -112,12 +112,9 @@ class ApiClient {
 
     // Add token to every request
     this.client.interceptors.request.use((config) => {
-      const adminToken = localStorage.getItem('admin_token');
-      const tenantToken = localStorage.getItem('auth_token');
-      const activeToken = adminToken || tenantToken || this.token;
-      
-      if (activeToken) {
-        config.headers.Authorization = `Bearer ${activeToken}`;
+      const token = localStorage.getItem("admin_token");
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
       }
       return config;
     });
@@ -141,23 +138,36 @@ class ApiClient {
       password,
     });
 
-    const responseData = response.data.data || response.data;
-    const token = responseData.token || response.data.token;
+    console.log("LOGIN RESPONSE:", response);
 
-    if (responseData && token) {
-      const admin = responseData as Admin;
+    let token = null;
+
+    // Correctly extract the JWT token based on response shape:
+    if ((response as any).token) {
+      token = (response as any).token;
+    } else if (response.data?.token) {
+      token = response.data.token;
+    } else if (response.data?.data?.token) {
+      token = response.data.data.token;
+    }
+
+    if (token) {
+      // Create admin object from whatever data we have
+      const adminData = response.data?.data || response.data || {};
+      const admin = adminData as Admin;
+      
       admin.token = token;
       this.token = token;
-      this.pgType = admin.pgType || responseData.pg_type || 'boys'; // Fallback if pgType is missing
+      this.pgType = admin.pgType || adminData.pg_type || 'boys'; // Fallback if pgType is missing
       
-      localStorage.setItem('admin_token', token);
+      localStorage.setItem("admin_token", token);
       localStorage.setItem('pg_type', this.pgType);
       localStorage.setItem('admin_email', admin.email || email);
       
       return admin;
     }
 
-    throw new Error(response.data.message || 'Login failed');
+    throw new Error(response.data?.message || 'Login failed');
   }
 
   async verifyToken(): Promise<boolean> {

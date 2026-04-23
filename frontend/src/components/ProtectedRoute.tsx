@@ -51,14 +51,14 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
           setHasRequiredRole(!!tenantId);
         }
       } else {
-        setHasRequiredRole(isValid); // if no required role, hasRequiredRole mirrors isValid
+        setHasRequiredRole(isValid);
       }
     } catch (error) {
       console.error("Authentication check failed:", error);
       setIsAuthenticated(false);
       setHasRequiredRole(false);
     } finally {
-      // Failsafe: if states are still null, set them to false to prevent infinite loading
+      // Always ensure we don't stay in loading state
       setIsAuthenticated(prev => prev === null ? false : prev);
       setHasRequiredRole(prev => prev === null ? false : prev);
     }
