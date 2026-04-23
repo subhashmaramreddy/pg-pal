@@ -117,20 +117,34 @@ router.post('/admin/register', async (req: AuthRequest, res: Response) => {
 // Verify Token
 router.post('/verify-token', (req: AuthRequest, res: Response) => {
   try {
-    const { token } = req.body;
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
+      return res.status(400).json({ success: false, error: "No token provided" });
+    }
+
+    const token = authHeader.split(" ")[1];
 
     if (!token) {
-      return res.status(400).json({ success: false, error: 'Token required' });
+      return res.status(400).json({ success: false, error: "Invalid token format" });
     }
 
     const decoded = verifyToken(token);
+
     if (!decoded) {
-      return res.status(401).json({ success: false, error: 'Invalid or expired token' });
+      return res.status(400).json({ success: false, error: "Invalid or expired token" });
     }
 
-    res.json({ success: true, data: decoded });
+    return res.json({
+      success: true,
+      user: decoded
+    });
+
   } catch (error) {
-    res.status(500).json({ success: false, error: (error as Error).message });
+    return res.status(400).json({
+      success: false,
+      error: "Invalid or expired token"
+    });
   }
 });
 
