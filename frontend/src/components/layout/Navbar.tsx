@@ -17,7 +17,7 @@ export function Navbar() {
   }, []);
 
   const checkAuthStatus = () => {
-    const token = localStorage.getItem("auth_token");
+    const token = localStorage.getItem("auth_token") || localStorage.getItem("admin_token");
     const tenantId = localStorage.getItem("tenant_id");
     const adminEmail = localStorage.getItem("admin_email");
     const tenantName = localStorage.getItem("tenant_name");

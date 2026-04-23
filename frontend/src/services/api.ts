@@ -99,7 +99,7 @@ export interface DashboardStats {
 class ApiClient {
   private client: AxiosInstance;
   private socket: Socket | null = null;
-  private token: string | null = localStorage.getItem('auth_token');
+  private token: string | null = localStorage.getItem('admin_token') || localStorage.getItem('auth_token');
   private pgType: 'boys' | 'girls' | null = localStorage.getItem('pg_type') as 'boys' | 'girls' | null;
 
   constructor() {
@@ -112,8 +112,12 @@ class ApiClient {
 
     // Add token to every request
     this.client.interceptors.request.use((config) => {
-      if (this.token) {
-        config.headers.Authorization = `Bearer ${this.token}`;
+      const adminToken = localStorage.getItem('admin_token');
+      const tenantToken = localStorage.getItem('auth_token');
+      const activeToken = adminToken || tenantToken || this.token;
+      
+      if (activeToken) {
+        config.headers.Authorization = `Bearer ${activeToken}`;
       }
       return config;
     });
@@ -132,21 +136,28 @@ class ApiClient {
 
   // ===== AUTHENTICATION =====
   async adminLogin(email: string, password: string): Promise<Admin> {
-    const response = await this.client.post<ApiResponse<Admin>>('/auth/admin/login', {
+    const response = await this.client.post<any>('/auth/admin/login', {
       email,
       password,
     });
 
-    if (response.data.data) {
-      const admin = response.data.data;
-      this.token = admin.token;
-      this.pgType = admin.pgType;
-      localStorage.setItem('auth_token', admin.token);
-      localStorage.setItem('pg_type', admin.pgType);
-      localStorage.setItem('admin_email', admin.email);
+    const responseData = response.data.data || response.data;
+    const token = responseData.token || response.data.token;
+
+    if (responseData && token) {
+      const admin = responseData as Admin;
+      admin.token = token;
+      this.token = token;
+      this.pgType = admin.pgType || responseData.pg_type || 'boys'; // Fallback if pgType is missing
+      
+      localStorage.setItem('admin_token', token);
+      localStorage.setItem('pg_type', this.pgType);
+      localStorage.setItem('admin_email', admin.email || email);
+      
+      return admin;
     }
 
-    return response.data.data!;
+    throw new Error(response.data.message || 'Login failed');
   }
 
   async verifyToken(): Promise<boolean> {
@@ -181,6 +192,7 @@ class ApiClient {
   logout(): void {
     this.token = null;
     this.pgType = null;
+    localStorage.removeItem('admin_token');
     localStorage.removeItem('auth_token');
     localStorage.removeItem('pg_type');
     localStorage.removeItem('admin_email');

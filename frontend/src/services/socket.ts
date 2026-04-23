@@ -46,7 +46,7 @@ class SocketService {
       this.isConnecting = true;
 
       try {
-        const token = localStorage.getItem("auth_token");
+        const token = localStorage.getItem("admin_token") || localStorage.getItem("auth_token");
         
         this.socket = io(this.url, {
           auth: {

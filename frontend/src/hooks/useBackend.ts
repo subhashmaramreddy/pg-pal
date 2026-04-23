@@ -144,7 +144,7 @@ export const useWebSocket = () => {
   const connect = useCallback(async (pgType: 'boys' | 'girls') => {
     setError(null);
     try {
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('admin_token') || localStorage.getItem('auth_token');
       if (!token) {
         throw new Error('No authentication token found');
       }

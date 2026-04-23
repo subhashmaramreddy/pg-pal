@@ -19,11 +19,19 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
 
   const checkAuthentication = async () => {
     try {
-      // Check if token exists in localStorage
-      const token = localStorage.getItem("auth_token");
+      // Determine which token to check based on role
+      let token = null;
+      if (requiredRole === "admin") {
+        token = localStorage.getItem("admin_token");
+      } else if (requiredRole === "tenant") {
+        token = localStorage.getItem("auth_token") || localStorage.getItem("tenant_token");
+      } else {
+        token = localStorage.getItem("admin_token") || localStorage.getItem("auth_token") || localStorage.getItem("tenant_token");
+      }
       
       if (!token) {
         setIsAuthenticated(false);
+        setHasRequiredRole(false);
         return;
       }
 
@@ -36,17 +44,23 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
         if (requiredRole === "admin") {
           const pgType = localStorage.getItem("pg_type");
           const adminEmail = localStorage.getItem("admin_email");
+          // Assuming an admin token means they are admin, but checking pgType as well
           setHasRequiredRole(!!pgType && !!adminEmail);
         } else if (requiredRole === "tenant") {
           const tenantId = localStorage.getItem("tenant_id");
           setHasRequiredRole(!!tenantId);
         }
       } else {
-        setHasRequiredRole(true);
+        setHasRequiredRole(isValid); // if no required role, hasRequiredRole mirrors isValid
       }
     } catch (error) {
       console.error("Authentication check failed:", error);
       setIsAuthenticated(false);
+      setHasRequiredRole(false);
+    } finally {
+      // Failsafe: if states are still null, set them to false to prevent infinite loading
+      setIsAuthenticated(prev => prev === null ? false : prev);
+      setHasRequiredRole(prev => prev === null ? false : prev);
     }
   };
 
@@ -64,7 +78,8 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
 
   // Not authenticated - redirect to appropriate login
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    const loginPath = requiredRole === "admin" ? "/admin/login" : "/login";
+    return <Navigate to={loginPath} state={{ from: location }} replace />;
   }
 
   // Role mismatch

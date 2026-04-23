@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { LogIn, Shield } from "lucide-react";
+import apiClient from "@/services/api";
 
 const adminLoginSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
@@ -35,13 +36,24 @@ export default function AdminLogin() {
     setIsLoading(true);
     console.log("Admin login attempt:", data);
 
-    // TODO: Implement actual authentication when Lovable Cloud is enabled
-    // Simulating login for now
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      // Call actual API login
+      const admin = await apiClient.adminLogin(data.username, data.password);
+      
       toast.success("Admin login successful!");
-      navigate("/admin/dashboard");
-    }, 1000);
+      
+      // Determine which dashboard to navigate to based on PG type
+      if (admin.pgType === 'girls') {
+        navigate("/admin/girls-dashboard");
+      } else {
+        navigate("/admin/dashboard");
+      }
+    } catch (error: any) {
+      console.error("Admin login failed:", error);
+      toast.error(error.message || "Invalid username or password");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
