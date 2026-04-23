@@ -173,18 +173,7 @@ class ApiClient {
 
       
    
-  async verifyToken(): Promise<boolean> {
-  try {
-    const res = await this.client.post('/auth/verify-token');
 
-    console.log("VERIFY RESPONSE:", res.data);
-
-    return res.data.success === true;
-  } catch (error) {
-    console.error("VERIFY ERROR:", error);
-    return false;
-  }
-}
   async tenantLogin(email: string, password: string): Promise<TenantLoginResponse> {
     const response = await this.client.post<ApiResponse<TenantLoginResponse>>('/tenant/login', {
       email,

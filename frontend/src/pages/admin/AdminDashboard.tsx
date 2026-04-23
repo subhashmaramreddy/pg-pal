@@ -99,11 +99,8 @@ export default function AdminDashboard() {
 
       try {
         setLoading(true);
-        // Wrap verification call in try/catch/finally
-        const isValid = await apiClient.verifyToken();
-        if (!isValid) {
-          throw new Error("Token verification failed");
-        }
+        // Token is already verified locally by ProtectedRoute.
+        // We only need to check if we have a pg_type to load data.
         
         const pgType = localStorage.getItem('pg_type') as 'boys' | 'girls';
         if (pgType) {
