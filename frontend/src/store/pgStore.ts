@@ -572,6 +572,8 @@ export const usePGStore = create<PGStore>()(
           set({ rooms, tenants, joiners, payments });
         } catch (error) {
           console.error('Failed to load all dashboard data:', error);
+          // Re-throw error so AdminDashboard can handle it properly
+          throw error;
         }
       },
 

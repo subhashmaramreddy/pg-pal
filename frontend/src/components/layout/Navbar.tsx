@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Building2, Menu, X, LogOut, User, LayoutDashboard } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -11,10 +11,11 @@ export function Navbar() {
   const [userType, setUserType] = useState<"tenant" | "admin" | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     checkAuthStatus();
-  }, []);
+  }, [location]);
 
   const checkAuthStatus = () => {
     const token = localStorage.getItem("auth_token") || localStorage.getItem("admin_token");
@@ -37,6 +38,10 @@ export function Navbar() {
       setUserName(adminEmail);
     }
   };
+
+  // Determine if user should see logout button based on current page
+  const isAdminPage = location.pathname.startsWith("/admin");
+  const isTenantPage = !location.pathname.startsWith("/admin") && isAuthenticated && userType === "tenant";
 
   const handleLogout = () => {
     apiClient.logout();
@@ -122,7 +127,7 @@ export function Navbar() {
                   Logout
                 </Button>
               </>
-            ) : userType === "admin" ? (
+            ) : userType === "admin" && isAdminPage ? (
               <>
                 <Link 
                   to="/admin/dashboard" 
@@ -230,7 +235,7 @@ export function Navbar() {
                     Logout
                   </Button>
                 </>
-              ) : userType === "admin" ? (
+              ) : userType === "admin" && isAdminPage ? (
                 <>
                   <Link 
                     to="/admin/dashboard" 
