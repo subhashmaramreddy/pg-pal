@@ -107,10 +107,10 @@ export default function AdminDashboard() {
           await loadAllData(pgType);
         }
       } catch (error) {
-        console.error('Verification/Load failed:', error);
-        toast.error('Session expired or failed to load data');
-        // On error -> redirect to login
-        navigate("/admin/login");
+        console.error('Dashboard data load failed, but session is still valid:', error);
+        toast.error('Failed to load dashboard data. Please refresh the page.');
+        // Do NOT redirect to login on data load failure
+        // User is still authenticated, just the data failed to load
       } finally {
         // Always stop loading in finally
         setLoading(false);

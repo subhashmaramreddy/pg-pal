@@ -125,7 +125,9 @@ class ApiClient {
     this.client.interceptors.response.use(
       (response) => response,
       (error) => {
-        if (error.response?.status === 401) {
+        // Only auto-logout on auth-specific errors from /auth routes
+        // Do NOT logout on dashboard/data fetch failures (404, 500, etc.)
+        if (error.response?.status === 401 && error.config?.url?.includes('/auth')) {
           this.logout();
         }
         return Promise.reject(error);
